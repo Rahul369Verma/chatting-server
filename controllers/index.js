@@ -54,12 +54,14 @@ export const register = (req, res) => {
 							secure: true,
 							httpOnly: true,
 							maxAge: TMaxAge,
+							sameSite: 'lax'
 						})
 						res.cookie("refreshToken", "Bearer " + refreshToken, {
 							secure: true,
 							httpOnly: true,
 							maxAge: RTMaxAge,
 							path: "/refreshToken",
+							sameSite: 'lax'
 						})
 						res.status(200).send({
 							username: savedUser.name, email: savedUser.email, type: savedUser.type
@@ -107,12 +109,14 @@ export const login = (req, res) => {
 							secure: true,
 							httpOnly: true,
 							maxAge: TMaxAge,
+							sameSite: 'lax'
 						})
 						res.cookie("refreshToken", "Bearer " + refreshToken, {
 							secure: true,
 							httpOnly: true,
 							maxAge: RTMaxAge,
 							path: "/refreshToken",
+							sameSite: 'lax'
 						})
 						res.status(200).send({
 							username: data.name, email: data.email, type: data.type
@@ -170,12 +174,14 @@ export const newCookies = (req, res) => {
 			secure: true,
 			httpOnly: true,
 			maxAge: TMaxAge,
+			sameSite: 'lax'
 		})
 		res.cookie("refreshToken", "Bearer " + refreshToken, {
 			secure: true,
 			httpOnly: true,
 			maxAge: RTMaxAge,
 			path: "/refreshToken",
+			sameSite: 'lax'
 		})
 
 		res.send({
