@@ -25,7 +25,7 @@ db.on('error', err => {
 
 var corsOptions = {
 	credentials: true,
-	origin: "http://localhost:3000"
+	origin: "https://elegant-feynman-9da9ab.netlify.app/"
 }
 
 const app = express();
