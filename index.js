@@ -25,7 +25,7 @@ db.on('error', err => {
 
 var corsOptions = {
 	credentials: true,
-	origin: "https://elegant-feynman-9da9ab.netlify.app/"
+	origin: "https://chatting-client-git.herokuapp.com"
 }
 
 const app = express();
