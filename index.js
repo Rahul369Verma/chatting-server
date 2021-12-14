@@ -37,7 +37,7 @@ app.use(cookieParser());
 
 
 
-
+app.get("/", (req, res) => {res.send("chatting server is running")})
 app.get("/refreshToken", refreshToken, newCookies)
 app.post("/register", register)
 app.post("/login", login)
