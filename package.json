@@ -1,0 +1,27 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "server": "nodemon -r esm index.js",
+    "client": "npm run start --prefix react-side",
+    "socket": "npm start --prefix socket",
+    "dev": "concurrently \"npm run index \" \"npm run client \" \"npm run socket\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "concurrently": "^6.1.0",
+    "cookie-parser": "^1.4.5",
+    "cors": "^2.8.5",
+    "dotenv": "^9.0.2",
+    "esm": "^3.2.25",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.12.9",
+    "morgan": "^1.10.0"
+  }
+}
