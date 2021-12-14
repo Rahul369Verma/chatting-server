@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "server": "node -r esm index.js",
+    "start": "node -r esm index.js",
     "client": "npm run start --prefix react-side",
     "socket": "npm start --prefix socket",
     "dev": "concurrently \"npm run index \" \"npm run client \" \"npm run socket\""
