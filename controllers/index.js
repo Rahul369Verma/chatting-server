@@ -51,14 +51,12 @@ export const register = (req, res) => {
 						// res.setHeader("Access-Control-Allow-Credentials", true)
 
 						await res.status(202).cookie("token", "Bearer " + token, {
-							domain: "https://chatting-client-git.herokuapp.com",
 							sameSite: "none",
 							path: "/",
 							httpOnly: true,
 							maxAge: TMaxAge,
 						})
 						await res.status(202).cookie("refreshToken", "Bearer " + refreshToken, {
-							domain: "https://chatting-client-git.herokuapp.com",
 							sameSite: "none",
 							httpOnly: true,
 							maxAge: RTMaxAge,
@@ -106,14 +104,12 @@ export const login = (req, res) => {
 						// res.setHeader("Access-Control-Allow-Credentials", true)
 
 						await res.status(202).cookie("token", "Bearer " + token, {
-							domain: "https://chatting-client-git.herokuapp.com",
 							sameSite: "none",
 							path: "/",
 							httpOnly: true,
 							maxAge: TMaxAge,
 						})
 						await res.status(202).cookie("refreshToken", "Bearer " + refreshToken, {
-							domain: "https://chatting-client-git.herokuapp.com",
 							sameSite: "none",
 							httpOnly: true,
 							maxAge: RTMaxAge,
@@ -171,14 +167,12 @@ export const newCookies = (req, res) => {
 		})
 		console.log("login success " + token)
 		await res.status(202).cookie("token", "Bearer " + token, {
-			domain: "https://chatting-client-git.herokuapp.com",
 			sameSite: "none",
 			path: "/",
 			httpOnly: true,
 			maxAge: TMaxAge,
 		})
 		await res.status(202).cookie("refreshToken", "Bearer " + refreshToken, {
-			domain: "https://chatting-client-git.herokuapp.com",
 			sameSite: "none",
 			httpOnly: true,
 			maxAge: RTMaxAge,
