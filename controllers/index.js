@@ -56,13 +56,13 @@ export const register = (req, res) => {
 							httpOnly: true,
 							maxAge: TMaxAge,
 						})
-						.cookie("refreshToken", "Bearer " + refreshToken, {
-							secure: process.env.NODE_ENV === "production",
-							sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
-							httpOnly: true,
-							maxAge: RTMaxAge,
-							path: "/refreshToken",
-						}).status(200)
+							.cookie("refreshToken", "Bearer " + refreshToken, {
+								secure: process.env.NODE_ENV === "production",
+								sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
+								httpOnly: true,
+								maxAge: RTMaxAge,
+								path: "/refreshToken",
+							}).status(200)
 							.send({
 								username: savedUser.name, email: savedUser.email, type: savedUser.type
 							})
@@ -112,13 +112,13 @@ export const login = (req, res) => {
 							httpOnly: true,
 							maxAge: TMaxAge,
 						})
-						.cookie("refreshToken", "Bearer " + refreshToken, {
-							secure: process.env.NODE_ENV === "production",
-							sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
-							httpOnly: true,
-							maxAge: RTMaxAge,
-							path: "/refreshToken",
-						}).status(200)
+							.cookie("refreshToken", "Bearer " + refreshToken, {
+								secure: process.env.NODE_ENV === "production",
+								sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
+								httpOnly: true,
+								maxAge: RTMaxAge,
+								path: "/refreshToken",
+							}).status(200)
 							.send({
 								username: data.name, email: data.email, type: data.type
 							})
@@ -135,8 +135,16 @@ export const login = (req, res) => {
 
 export const logout = (req, res) => {
 	console.log("logout")
-	res.clearCookie("refreshToken", { path: "/refreshToken" })
-	res.clearCookie("token")
+	res.clearCookie("refreshToken", {
+		secure: process.env.NODE_ENV === "production",
+		sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
+		path: "/refreshToken"
+	})
+	res.clearCookie("token",{
+		secure: process.env.NODE_ENV === "production",
+		sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
+		path: "/"
+	})
 	res.status(200).send(true)
 }
 
@@ -178,13 +186,13 @@ export const newCookies = (req, res) => {
 			httpOnly: true,
 			maxAge: TMaxAge,
 		})
-		.cookie("refreshToken", "Bearer " + refreshToken, {
-			secure: process.env.NODE_ENV === "production",
-			sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
-			httpOnly: true,
-			maxAge: RTMaxAge,
-			path: "/refreshToken",
-		}).status(200)
+			.cookie("refreshToken", "Bearer " + refreshToken, {
+				secure: process.env.NODE_ENV === "production",
+				sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
+				httpOnly: true,
+				maxAge: RTMaxAge,
+				path: "/refreshToken",
+			}).status(200)
 			.send({
 				username: data.name, email: data.email, type: data.type
 			})
