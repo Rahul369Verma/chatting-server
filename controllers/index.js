@@ -61,7 +61,7 @@ export const register = (req, res) => {
 							maxAge: RTMaxAge,
 							path: "/refreshToken",
 						}).status(200)
-							.send({
+							.json({
 								username: savedUser.name, email: savedUser.email, type: savedUser.type
 							})
 					}
@@ -115,7 +115,7 @@ export const login = (req, res) => {
 							maxAge: RTMaxAge,
 							path: "/refreshToken",
 						}).status(200)
-							.send({
+							.json({
 								username: data.name, email: data.email, type: data.type
 							})
 					} else {
@@ -179,7 +179,7 @@ export const newCookies = (req, res) => {
 			maxAge: RTMaxAge,
 			path: "/refreshToken",
 		}).status(200)
-			.send({
+			.json({
 				username: data.name, email: data.email, type: data.type
 			})
 	})
