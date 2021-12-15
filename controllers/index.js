@@ -2,7 +2,6 @@ const mongoose = require('mongoose')
 if (process.env.NODE_ENV !== 'production') {
 	require('dotenv').config();
 }
-import { raw } from "express";
 import jwt from "jsonwebtoken"
 import { comparePassword, hashPassword } from "../utils/auth.js"
 require("../models/userSchema")
@@ -50,10 +49,21 @@ export const register = (req, res) => {
 						console.log("login success", savedUser)
 						// res.setHeader("Access-Control-Allow-Credentials", true)
 
-						await res.status(202).cookie("token", "Bearer " + token)
-						await res.status(202).cookie("refreshToken", "Bearer " + refreshToken).send({
-							username: savedUser.name, email: savedUser.email, type: savedUser.type
+						await res.cookie("token", "Bearer " + token, {
+							secure: process.env.NODE_ENV === "production",
+							path: "/",
+							httpOnly: true,
+							maxAge: TMaxAge,
 						})
+						await res.cookie("refreshToken", "Bearer " + refreshToken, {
+							secure: process.env.NODE_ENV === "production",
+							httpOnly: true,
+							maxAge: RTMaxAge,
+							path: "/refreshToken",
+						}).status(200)
+							.send({
+								username: savedUser.name, email: savedUser.email, type: savedUser.type
+							})
 					}
 				})
 			} else if (err) {
@@ -93,10 +103,21 @@ export const login = (req, res) => {
 						console.log("login success", result)
 						// res.setHeader("Access-Control-Allow-Credentials", true)
 
-						await res.status(202).cookie("token", "Bearer " + token)
-						await res.status(202).cookie("refreshToken", "Bearer " + refreshToken).send({
-							username: data.name, email: data.email, type: data.type
+						await res.cookie("token", "Bearer " + token, {
+							secure: process.env.NODE_ENV === "production",
+							path: "/",
+							httpOnly: true,
+							maxAge: TMaxAge,
 						})
+						await res.cookie("refreshToken", "Bearer " + refreshToken, {
+							secure: process.env.NODE_ENV === "production",
+							httpOnly: true,
+							maxAge: RTMaxAge,
+							path: "/refreshToken",
+						}).status(200)
+							.send({
+								username: data.name, email: data.email, type: data.type
+							})
 					} else {
 						res.status(401).send("Wrong Password")
 					}
@@ -146,10 +167,21 @@ export const newCookies = (req, res) => {
 			expiresIn: RTExpire
 		})
 		console.log("login success " + token)
-		await res.status(202).cookie("token", "Bearer " + token)
-		await res.status(202).cookie("refreshToken", "Bearer " + refreshToken).send({
-			username: data.name, email: data.email, type: data.type
+		await res.cookie("token", "Bearer " + token, {
+			secure: process.env.NODE_ENV === "production",
+			path: "/",
+			httpOnly: true,
+			maxAge: TMaxAge,
 		})
+		await res.cookie("refreshToken", "Bearer " + refreshToken, {
+			secure: process.env.NODE_ENV === "production",
+			httpOnly: true,
+			maxAge: RTMaxAge,
+			path: "/refreshToken",
+		}).status(200)
+			.send({
+				username: data.name, email: data.email, type: data.type
+			})
 	})
 
 }
