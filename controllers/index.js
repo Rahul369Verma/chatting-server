@@ -52,14 +52,12 @@ export const register = (req, res) => {
 
 						res.status(202).cookie("token", "Bearer " + token, {
 							domain: "https://chatting-client-git.herokuapp.com",
-							sameSite: "strict",
 							path: "/",
 							httpOnly: true,
 							maxAge: TMaxAge,
 						})
 						res.status(202).cookie("refreshToken", "Bearer " + refreshToken, {
 							domain: "https://chatting-client-git.herokuapp.com",
-							sameSite: "strict",
 							httpOnly: true,
 							maxAge: RTMaxAge,
 							path: "/refreshToken",
@@ -108,14 +106,12 @@ export const login = (req, res) => {
 
 						res.status(202).cookie("token", "Bearer " + token, {
 							domain: "https://chatting-client-git.herokuapp.com",
-							sameSite: "strict",
 							path: "/",
 							httpOnly: true,
 							maxAge: TMaxAge,
 						})
 						res.status(202).cookie("refreshToken", "Bearer " + refreshToken, {
 							domain: "https://chatting-client-git.herokuapp.com",
-							sameSite: "strict",
 							httpOnly: true,
 							maxAge: RTMaxAge,
 							path: "/refreshToken",
@@ -174,14 +170,12 @@ export const newCookies = (req, res) => {
 		console.log("login success " + token)
 		res.status(202).cookie("token", "Bearer " + token, {
 			domain: "https://chatting-client-git.herokuapp.com",
-			sameSite: "strict",
 			path: "/",
 			httpOnly: true,
 			maxAge: TMaxAge,
 		})
 		res.status(202).cookie("refreshToken", "Bearer " + refreshToken, {
 			domain: "https://chatting-client-git.herokuapp.com",
-			sameSite: "strict",
 			httpOnly: true,
 			maxAge: RTMaxAge,
 			path: "/refreshToken",
