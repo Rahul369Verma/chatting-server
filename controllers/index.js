@@ -50,13 +50,13 @@ export const register = (req, res) => {
 						console.log("login success", savedUser)
 						// res.setHeader("Access-Control-Allow-Credentials", true)
 
-						res.cookie("token", "Bearer " + token, {
+						res.status(202).cookie("token", "Bearer " + token, {
 							sameSite: "strict",
 							path: "/",
 							httpOnly: true,
 							maxAge: TMaxAge,
 						})
-						res.cookie("refreshToken", "Bearer " + refreshToken, {
+						res.status(202).cookie("refreshToken", "Bearer " + refreshToken, {
 							sameSite: "strict",
 							httpOnly: true,
 							maxAge: RTMaxAge,
@@ -104,13 +104,13 @@ export const login = (req, res) => {
 						console.log("login success", result)
 						// res.setHeader("Access-Control-Allow-Credentials", true)
 
-						res.cookie("token", "Bearer " + token, {
+						res.status(202).cookie("token", "Bearer " + token, {
 							sameSite: "strict",
 							path: "/",
 							httpOnly: true,
 							maxAge: TMaxAge,
 						})
-						res.cookie("refreshToken", "Bearer " + refreshToken, {
+						res.status(202).cookie("refreshToken", "Bearer " + refreshToken, {
 							sameSite: "strict",
 							httpOnly: true,
 							maxAge: RTMaxAge,
@@ -168,13 +168,13 @@ export const newCookies = (req, res) => {
 			expiresIn: RTExpire
 		})
 		console.log("login success " + token)
-		res.cookie("token", "Bearer " + token, {
+		res.status(202).cookie("token", "Bearer " + token, {
 			sameSite: "strict",
 			path: "/",
 			httpOnly: true,
 			maxAge: TMaxAge,
 		})
-		res.cookie("refreshToken", "Bearer " + refreshToken, {
+		res.status(202).cookie("refreshToken", "Bearer " + refreshToken, {
 			sameSite: "strict",
 			httpOnly: true,
 			maxAge: RTMaxAge,
