@@ -55,13 +55,13 @@ export const register = (req, res) => {
 							httpOnly: true,
 							maxAge: TMaxAge,
 						})
-						await res.cookie("refreshToken", "Bearer " + refreshToken, {
+						.cookie("refreshToken", "Bearer " + refreshToken, {
 							secure: process.env.NODE_ENV === "production",
 							httpOnly: true,
 							maxAge: RTMaxAge,
 							path: "/refreshToken",
 						}).status(200)
-							.json({
+							.send({
 								username: savedUser.name, email: savedUser.email, type: savedUser.type
 							})
 					}
@@ -109,13 +109,13 @@ export const login = (req, res) => {
 							httpOnly: true,
 							maxAge: TMaxAge,
 						})
-						await res.cookie("refreshToken", "Bearer " + refreshToken, {
+						cookie("refreshToken", "Bearer " + refreshToken, {
 							secure: process.env.NODE_ENV === "production",
 							httpOnly: true,
 							maxAge: RTMaxAge,
 							path: "/refreshToken",
 						}).status(200)
-							.json({
+							.send({
 								username: data.name, email: data.email, type: data.type
 							})
 					} else {
@@ -173,13 +173,13 @@ export const newCookies = (req, res) => {
 			httpOnly: true,
 			maxAge: TMaxAge,
 		})
-		await res.cookie("refreshToken", "Bearer " + refreshToken, {
+		cookie("refreshToken", "Bearer " + refreshToken, {
 			secure: process.env.NODE_ENV === "production",
 			httpOnly: true,
 			maxAge: RTMaxAge,
 			path: "/refreshToken",
 		}).status(200)
-			.json({
+			.send({
 				username: data.name, email: data.email, type: data.type
 			})
 	})
