@@ -94,39 +94,44 @@ export const AllConversationGet = async (req, res) => {
 	console.log("jwtData", req.jwtData)
 	let userEmail = ""
 	let conversations = []
-	await User.findOne({ _id: req.jwtData._id }, (err, data) => {
-		if (err) {
-			res.status(404).send("user not found")
-		} else if (data === null) {
-			res.status(404).send("user not found")
-		} else {
-			userEmail = data.email
-			Friend.find({ members: { $in: [userEmail] } }, async (err, friendFound) => {
-				if (err) {
-					res.status(500).send("error finding friend")
-				} else if (friendFound === null) {
-					res.send([])
-				} else if (friendFound) {
-					console.log(userEmail)
-					console.log("friends Found", friendFound)
-					for (let i = 0; i < friendFound.length; i++) {
-						try {
-							const conversationFound = await Conversation.findOne({ friendCollectionId: friendFound[i]._id })
-							if (conversationFound === null) {
+	try {
+		await User.findOne({ _id: req.jwtData._id }, (err, data) => {
+			if (err) {
+				res.status(404).send("user not found")
+			} else if (data === null) {
+				res.status(404).send("user not found")
+			} else {
+				userEmail = data.email
+				Friend.find({ members: { $in: [userEmail] } }, async (err, friendFound) => {
+					if (err) {
+						res.status(500).send("error finding friend")
+					} else if (friendFound === null) {
+						res.send([])
+					} else {
+						console.log(userEmail)
+						console.log("friends Found", friendFound)
+						for (let i = 0; i < friendFound.length; i++) {
+							try {
+								const conversationFound = await Conversation.findOne({ friendCollectionId: friendFound[i]._id })
+								if (conversationFound === null) {
 
-							} else {
-								conversations.push(conversationFound)
+								} else {
+									conversations.push(conversationFound)
+								}
+							} catch (err) {
+								res.status(500).send("error finding conversation")
 							}
-						} catch (err) {
-							res.status(500).send("error finding conversation")
+							console.log(conversations)
+							res.status(200).send(conversations)
 						}
-						console.log(conversations)
-						res.send(conversations)
 					}
-				}
-			})
-		}
-	})
+				})
+			}
+		})
+	}catch(userError){
+		console.log(userError)
+		res.status(500).send(userError)
+	}
 }
 
 export const ConversationGetFriendId = (req, res) => {
