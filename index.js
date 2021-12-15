@@ -25,7 +25,7 @@ db.on('error', err => {
 
 var corsOptions = {
 	credentials: true,
-	origin: "https://chatting-client-git.herokuapp.com"
+	origin: [process.env.FRONTEND_APP_URL]
 }
 
 const app = express();

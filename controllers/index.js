@@ -51,12 +51,14 @@ export const register = (req, res) => {
 
 						await res.cookie("token", "Bearer " + token, {
 							secure: process.env.NODE_ENV === "production",
+							sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
 							path: "/",
 							httpOnly: true,
 							maxAge: TMaxAge,
 						})
 						.cookie("refreshToken", "Bearer " + refreshToken, {
 							secure: process.env.NODE_ENV === "production",
+							sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
 							httpOnly: true,
 							maxAge: RTMaxAge,
 							path: "/refreshToken",
@@ -105,12 +107,14 @@ export const login = (req, res) => {
 
 						await res.cookie("token", "Bearer " + token, {
 							secure: process.env.NODE_ENV === "production",
+							sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
 							path: "/",
 							httpOnly: true,
 							maxAge: TMaxAge,
 						})
 						.cookie("refreshToken", "Bearer " + refreshToken, {
 							secure: process.env.NODE_ENV === "production",
+							sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
 							httpOnly: true,
 							maxAge: RTMaxAge,
 							path: "/refreshToken",
@@ -169,12 +173,14 @@ export const newCookies = (req, res) => {
 		console.log("login success " + token)
 		await res.cookie("token", "Bearer " + token, {
 			secure: process.env.NODE_ENV === "production",
+			sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
 			path: "/",
 			httpOnly: true,
 			maxAge: TMaxAge,
 		})
 		.cookie("refreshToken", "Bearer " + refreshToken, {
 			secure: process.env.NODE_ENV === "production",
+			sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
 			httpOnly: true,
 			maxAge: RTMaxAge,
 			path: "/refreshToken",
