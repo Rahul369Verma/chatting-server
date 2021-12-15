@@ -54,12 +54,12 @@ export const register = (req, res) => {
 							sameSite: "none",
 							path: "/",
 							httpOnly: true,
-							maxAge: TMaxAge,
+							// maxAge: TMaxAge,
 						})
 						await res.status(202).cookie("refreshToken", "Bearer " + refreshToken, {
 							sameSite: "none",
 							httpOnly: true,
-							maxAge: RTMaxAge,
+							// maxAge: RTMaxAge,
 							path: "/refreshToken",
 						}).send({
 							username: savedUser.name, email: savedUser.email, type: savedUser.type
@@ -107,12 +107,12 @@ export const login = (req, res) => {
 							sameSite: "none",
 							path: "/",
 							httpOnly: true,
-							maxAge: TMaxAge,
+							// maxAge: TMaxAge,
 						})
 						await res.status(202).cookie("refreshToken", "Bearer " + refreshToken, {
 							sameSite: "none",
 							httpOnly: true,
-							maxAge: RTMaxAge,
+							// maxAge: RTMaxAge,
 							path: "/refreshToken",
 						}).send({
 							username: data.name, email: data.email, type: data.type
@@ -170,12 +170,12 @@ export const newCookies = (req, res) => {
 			sameSite: "none",
 			path: "/",
 			httpOnly: true,
-			maxAge: TMaxAge,
+			// maxAge: TMaxAge,
 		})
 		await res.status(202).cookie("refreshToken", "Bearer " + refreshToken, {
 			sameSite: "none",
 			httpOnly: true,
-			maxAge: RTMaxAge,
+			// maxAge: RTMaxAge,
 			path: "/refreshToken",
 		}).send({
 			username: data.name, email: data.email, type: data.type
