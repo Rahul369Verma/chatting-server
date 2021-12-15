@@ -50,18 +50,8 @@ export const register = (req, res) => {
 						console.log("login success", savedUser)
 						// res.setHeader("Access-Control-Allow-Credentials", true)
 
-						await res.status(202).cookie("token", "Bearer " + token, {
-							sameSite: "none",
-							path: "/",
-							httpOnly: true,
-							// maxAge: TMaxAge,
-						})
-						await res.status(202).cookie("refreshToken", "Bearer " + refreshToken, {
-							sameSite: "none",
-							httpOnly: true,
-							// maxAge: RTMaxAge,
-							path: "/refreshToken",
-						}).send({
+						await res.status(202).cookie("token", "Bearer " + token)
+						await res.status(202).cookie("refreshToken", "Bearer " + refreshToken).send({
 							username: savedUser.name, email: savedUser.email, type: savedUser.type
 						})
 					}
@@ -103,18 +93,8 @@ export const login = (req, res) => {
 						console.log("login success", result)
 						// res.setHeader("Access-Control-Allow-Credentials", true)
 
-						await res.status(202).cookie("token", "Bearer " + token, {
-							sameSite: "none",
-							path: "/",
-							httpOnly: true,
-							// maxAge: TMaxAge,
-						})
-						await res.status(202).cookie("refreshToken", "Bearer " + refreshToken, {
-							sameSite: "none",
-							httpOnly: true,
-							// maxAge: RTMaxAge,
-							path: "/refreshToken",
-						}).send({
+						await res.status(202).cookie("token", "Bearer " + token)
+						await res.status(202).cookie("refreshToken", "Bearer " + refreshToken).send({
 							username: data.name, email: data.email, type: data.type
 						})
 					} else {
@@ -166,18 +146,8 @@ export const newCookies = (req, res) => {
 			expiresIn: RTExpire
 		})
 		console.log("login success " + token)
-		await res.status(202).cookie("token", "Bearer " + token, {
-			sameSite: "none",
-			path: "/",
-			httpOnly: true,
-			// maxAge: TMaxAge,
-		})
-		await res.status(202).cookie("refreshToken", "Bearer " + refreshToken, {
-			sameSite: "none",
-			httpOnly: true,
-			// maxAge: RTMaxAge,
-			path: "/refreshToken",
-		}).send({
+		await res.status(202).cookie("token", "Bearer " + token)
+		await res.status(202).cookie("refreshToken", "Bearer " + refreshToken).send({
 			username: data.name, email: data.email, type: data.type
 		})
 	})
