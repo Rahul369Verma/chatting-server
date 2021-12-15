@@ -109,7 +109,7 @@ export const login = (req, res) => {
 							httpOnly: true,
 							maxAge: TMaxAge,
 						})
-						cookie("refreshToken", "Bearer " + refreshToken, {
+						.cookie("refreshToken", "Bearer " + refreshToken, {
 							secure: process.env.NODE_ENV === "production",
 							httpOnly: true,
 							maxAge: RTMaxAge,
@@ -173,7 +173,7 @@ export const newCookies = (req, res) => {
 			httpOnly: true,
 			maxAge: TMaxAge,
 		})
-		cookie("refreshToken", "Bearer " + refreshToken, {
+		.cookie("refreshToken", "Bearer " + refreshToken, {
 			secure: process.env.NODE_ENV === "production",
 			httpOnly: true,
 			maxAge: RTMaxAge,
