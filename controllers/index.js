@@ -8,8 +8,8 @@ require("../models/userSchema")
 
 const User = mongoose.model('user')
 
-const TMaxAge = 1000 * 60 * 1 * 12
-const TExpire = 1000 * 60 * 1 * 12
+const TMaxAge = 1000 * 60 * 60 * 12
+const TExpire = 1000 * 60 * 60 * 12
 const RTMaxAge = 1000 * 60 * 60 * 24 * 7
 const RTExpire = "7d"
 
