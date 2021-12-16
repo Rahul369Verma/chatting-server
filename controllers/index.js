@@ -49,23 +49,23 @@ export const register = (req, res) => {
 						console.log("login success", savedUser)
 						// res.setHeader("Access-Control-Allow-Credentials", true)
 
-						await res.cookie("token", "Bearer " + token, {
+						res.cookie("token", "Bearer " + token, {
 							secure: process.env.NODE_ENV === "production",
 							sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
 							path: "/",
 							httpOnly: true,
 							maxAge: TMaxAge,
 						})
-							.cookie("refreshToken", "Bearer " + refreshToken, {
-								secure: process.env.NODE_ENV === "production",
-								sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
-								httpOnly: true,
-								maxAge: RTMaxAge,
-								path: "/refreshToken",
-							}).status(200)
-							.send({
-								username: savedUser.name, email: savedUser.email, type: savedUser.type
-							})
+						res.cookie("refreshToken", "Bearer " + refreshToken, {
+							secure: process.env.NODE_ENV === "production",
+							sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
+							httpOnly: true,
+							maxAge: RTMaxAge,
+							path: "/refreshToken",
+						})
+						res.send({
+							username: savedUser.name, email: savedUser.email, type: savedUser.type
+						})
 					}
 				})
 			} else if (err) {
@@ -105,23 +105,23 @@ export const login = (req, res) => {
 						console.log("login success", result)
 						// res.setHeader("Access-Control-Allow-Credentials", true)
 
-						await res.cookie("token", "Bearer " + token, {
+						res.cookie("token", "Bearer " + token, {
 							secure: process.env.NODE_ENV === "production",
 							sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
 							path: "/",
 							httpOnly: true,
 							maxAge: TMaxAge,
 						})
-							.cookie("refreshToken", "Bearer " + refreshToken, {
-								secure: process.env.NODE_ENV === "production",
-								sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
-								httpOnly: true,
-								maxAge: RTMaxAge,
-								path: "/refreshToken",
-							}).status(200)
-							.send({
-								username: data.name, email: data.email, type: data.type
-							})
+						res.cookie("refreshToken", "Bearer " + refreshToken, {
+							secure: process.env.NODE_ENV === "production",
+							sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
+							httpOnly: true,
+							maxAge: RTMaxAge,
+							path: "/refreshToken",
+						})
+						res.send({
+							username: data.name, email: data.email, type: data.type
+						})
 					} else {
 						res.status(401).send("Wrong Password")
 					}
@@ -140,7 +140,7 @@ export const logout = (req, res) => {
 		sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
 		path: "/refreshToken"
 	})
-	res.clearCookie("token",{
+	res.clearCookie("token", {
 		secure: process.env.NODE_ENV === "production",
 		sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
 		path: "/"
@@ -179,21 +179,21 @@ export const newCookies = (req, res) => {
 			expiresIn: RTExpire
 		})
 		console.log("login success " + token)
-		await res.cookie("token", "Bearer " + token, {
+		res.cookie("token", "Bearer " + token, {
 			secure: process.env.NODE_ENV === "production",
 			sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
 			path: "/",
 			httpOnly: true,
 			maxAge: TMaxAge,
 		})
-			.cookie("refreshToken", "Bearer " + refreshToken, {
+			res.cookie("refreshToken", "Bearer " + refreshToken, {
 				secure: process.env.NODE_ENV === "production",
 				sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
 				httpOnly: true,
 				maxAge: RTMaxAge,
 				path: "/refreshToken",
-			}).status(200)
-			.send({
+			})
+			res.send({
 				username: data.name, email: data.email, type: data.type
 			})
 	})

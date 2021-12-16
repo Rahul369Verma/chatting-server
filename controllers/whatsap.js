@@ -111,16 +111,14 @@ export const AllConversationGet = async (req, res) => {
 						console.log(userEmail)
 						console.log("friends Found", friendFound)
 						for (let i = 0; i < friendFound.length; i++) {
-							try {
-								const conversationFound = await Conversation.findOne({ friendCollectionId: friendFound[i]._id })
-								if (conversationFound === null) {
+							const conversationFound = await Conversation.findOne({ friendCollectionId: friendFound[i]._id })
+							if (conversationFound === null) {
 
-								} else {
-									conversations.push(conversationFound)
-								}
-							} catch (err) {
-								res.status(500).send("error finding conversation")
+							} else {
+								conversations.push(conversationFound)
 							}
+						}
+						if (conversations !== []) {
 							console.log(conversations)
 							res.status(200).send(conversations)
 						}
@@ -128,7 +126,7 @@ export const AllConversationGet = async (req, res) => {
 				})
 			}
 		})
-	}catch(userError){
+	} catch (userError) {
 		console.log(userError)
 		res.status(500).send(userError)
 	}
