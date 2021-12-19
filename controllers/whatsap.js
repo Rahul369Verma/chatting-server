@@ -6,12 +6,14 @@ require("../models/userSchema")
 require("../models/conversationSchema")
 require("../models/messageSchema")
 require("../models/friendSchema")
+require("../models/notificationSchema")
 
 
 const User = mongoose.model('user')
 const Message = mongoose.model('message')
 const Conversation = mongoose.model("conversation")
 const Friend = mongoose.model('friend')
+const Notification = mongoose.model('notification')
 
 
 export const MessagePost = async (req, res) => {
@@ -90,46 +92,41 @@ export const MessageGet = (req, res) => {
 // }
 
 
-export const AllConversationGet = async (req, res) => {
+export const AllConversationGet = (req, res) => {
 	console.log("jwtData", req.jwtData)
 	let userEmail = ""
 	let conversations = []
-	try {
-		await User.findOne({ _id: req.jwtData._id }, (err, data) => {
-			if (err) {
-				res.status(404).send("user not found")
-			} else if (data === null) {
-				res.status(404).send("user not found")
-			} else {
-				userEmail = data.email
-				Friend.find({ members: { $in: [userEmail] } }, async (err, friendFound) => {
-					if (err) {
-						res.status(500).send("error finding friend")
-					} else if (friendFound === null) {
-						res.send([])
-					} else {
-						console.log(userEmail)
-						console.log("friends Found", friendFound)
-						for (let i = 0; i < friendFound.length; i++) {
-							const conversationFound = await Conversation.findOne({ friendCollectionId: friendFound[i]._id })
-							if (conversationFound === null) {
+	User.findOne({ _id: req.jwtData._id }, (err, data) => {
+		if (err) {
+			res.status(404).send("user not found")
+		} else if (data === null) {
+			res.status(404).send("user not found")
+		} else {
+			userEmail = data.email
+			Friend.find({ members: { $in: [userEmail] } }, async (err, friendFound) => {
+				if (err) {
+					res.status(500).send("error finding friend")
+				} else if (friendFound === null) {
+					res.send([])
+				} else {
+					console.log(userEmail)
+					console.log("friends Found", friendFound)
+					for (let i = 0; i < friendFound.length; i++) {
+						const conversationFound = await Conversation.findOne({ friendCollectionId: friendFound[i]._id })
+						if (conversationFound === null) {
 
-							} else {
-								conversations.push(conversationFound)
-							}
-						}
-						if (conversations !== []) {
-							console.log(conversations)
-							res.status(200).send(conversations)
+						} else {
+							conversations.push(conversationFound)
 						}
 					}
-				})
-			}
-		})
-	} catch (userError) {
-		console.log(userError)
-		res.status(500).send(userError)
-	}
+					if (conversations !== []) {
+						console.log(conversations)
+						res.status(200).send(conversations)
+					}
+				}
+			})
+		}
+	})
 }
 
 export const ConversationGetFriendId = (req, res) => {
@@ -149,7 +146,7 @@ export const ConversationGetFriendId = (req, res) => {
 
 export const SearchUser = (req, res) => {
 	console.log(req.body)
-	User.find({ $or: [{ name: { '$regex': req.body.name } }, { email: { '$regex': req.body.name } }] }, async (err, allUsers) => {
+	User.find({ $or: [{ name: { '$regex': req.body.name, "$options": 'i' } }, { email: { '$regex': req.body.name, "$options": 'i' } }] }, async (err, allUsers) => {
 		if (err) {
 			res.status(500).send("error occurred for searching in database")
 		}
@@ -159,27 +156,33 @@ export const SearchUser = (req, res) => {
 		let s = false
 		for (let i = 0; i < allUsers.length; i++) {
 			if (allUsers[i]._id != req.jwtData._id) {
-				await Friend.findOne({ members: { $all: [allUsers[i].email, req.body.email] } }, (err, friendFound) => {
+				await Friend.findOne({ members: { $all: [allUsers[i].email, req.body.email] } }, async (err, friendFound) => {
 					if (err) {
 						return
 					} else if (friendFound === null) {
-						return others.push(allUsers[i])
+						allUsers[i].password = null
+						await others.push(allUsers[i])
+						return
+					} else {
+						await friends.push(friendFound)
+						return
 					}
-					return friends.push(friendFound)
 				})
 			}
 		}
 		for (let i = 0; i < friends.length; i++) {
-			await Conversation.findOne({ friendCollectionId: friends[i]._id }, (err, conversationFound) => {
+			await Conversation.findOne({ friendCollectionId: friends[i]._id }, async (err, conversationFound) => {
 				if (err) {
-					return
+					console.log(err)
 				} else if (conversationFound === null) {
 					return
+				} else {
+					await conversations.push(conversationFound)
+					return
 				}
-				return conversations.push(conversationFound)
 			})
-
 		}
+		console.log(others, friends, conversations)
 		res.send({ others, friends, conversations })
 	})
 }
@@ -245,4 +248,128 @@ export const Delivered = (req, res) => {
 	Message.updateMany({ conversationId: req.body.id, status: "send" }, { $set: { status: "delivered" } }, (messageUpdateErr, messageUpdated) => {
 		res.send("Message Seen status success")
 	})
+}
+
+export const sendFriendRequest = (req, res) => {
+	let notificationBody = {
+		senderEmail: req.body.senderEmail,
+		receiverEmail: req.body.receiverEmail,
+		status: "notSeen",
+		type: "friendRequest"
+	}
+	Notification.findOne(notificationBody, async (error, find) => {
+		console.log(find)
+		if (error) {
+			res.status(500).send()
+		} else if (find === null) {
+			await new Notification(notificationBody).save()
+			return res.status(200).send()
+		} else {
+			console.log("already send friend Request")
+			res.status(500).send("already sended")
+		}
+	})
+
+}
+export const cancelFriendRequest = async (req, res) => {
+	try {
+		const deleted = await Notification.deleteOne({ senderEmail: req.body.senderEmail, receiverEmail: req.body.receiverEmail, type: "friendRequest" })
+		if (deleted.deletedCount !== 0) {
+			res.status(200).send(true)
+		} else {
+			res.status(500).send("Friend Request Accepted")
+		}
+	} catch (error) {
+		res.status(500).send("cant cancel")
+	}
+
+}
+export const checkFriendRequest = async (req, res) => {
+	console.log(req.body)
+	Notification.findOne({ senderEmail: req.body.senderEmail, receiverEmail: req.body.receiverEmail, type: req.body.type }, (error, find) => {
+		if (error) {
+			res.status(500).send("cant cancel")
+		} else if (find === null) {
+			res.status(200).send(false)
+		} else {
+			res.status(200).send(true)
+		}
+	})
+}
+export const allNotifications = async (req, res) => {
+	console.log(req.jwtData)
+	const user = await User.findById(req.jwtData._id)
+	Notification.find({ receiverEmail: user.email }, (error, all) => {
+		if (error) {
+			res.status(500).send("cant get")
+		} else {
+			res.status(200).send(all)
+		}
+	})
+}
+export const seenNotifications = async (req, res) => {
+	console.log(req.jwtData)
+	const user = await User.findById(req.jwtData._id)
+	Notification.updateMany({ receiverEmail: user.email, status: "notSeen" }, { status: "seen" }, (error, all) => {
+		if (error) {
+			res.status(500).send("cant get")
+		} else {
+			res.status(200).send(all)
+		}
+	})
+}
+
+export const acceptFriendRequest = async (req, res) => {
+	let notificationBody = {
+		senderEmail: req.body.data.receiverEmail,
+		receiverEmail: req.body.data.senderEmail,
+		status: "notSeen",
+		type: "acceptFriendRequest"
+	}
+	try {
+		const deleted = await Notification.deleteOne({ _id: req.body.data._id })
+		if (deleted.deletedCount !== 0) {
+			new Friend({ members: [req.body.data.senderEmail, req.body.data.receiverEmail] })
+				.save(async (friendSaveErr, friendSaved) => {
+					if (friendSaveErr) {
+						return res.status(500).send("friend not been saved")
+					}
+					if (friendSaved) {
+						await new Notification(notificationBody).save()
+						res.status(200).send(friendSaved)
+					}
+				})
+		} else {
+			res.status(500).send("Notification Not Found")
+		}
+	} catch (error) {
+		res.status(500).send(error)
+	}
+}
+export const removeFriendRequest = async (req, res) => {
+	let notificationBody = {
+		senderEmail: req.body.data.receiverEmail,
+		receiverEmail: req.body.data.senderEmail,
+		status: "notSeen",
+		type: "removeFriendRequest"
+	}
+
+	try {
+		const deleted = await Notification.deleteOne({ _id: req.body.data._id })
+		if (deleted.deletedCount !== 0) {
+			console.log(notificationBody)
+			await new Notification(notificationBody).save()
+		}
+		res.status(200).send(true)
+	} catch (error) {
+		res.status(500).send("cant remove")
+	}
+}
+export const removeNotification = async (req, res) => {
+	try {
+		const deleted = await Notification.deleteOne({ _id: req.body.data._id })
+		res.status(200).send(true)
+	} catch (error) {
+		res.status(500).send("cant remove")
+	}
 }

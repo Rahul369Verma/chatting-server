@@ -9,7 +9,7 @@ require("../models/userSchema")
 const User = mongoose.model('user')
 
 const TMaxAge = 1000 * 60 * 60 * 12
-const TExpire = 1000 * 60 * 60 * 12
+const TExpire = "12h"
 const RTMaxAge = 1000 * 60 * 60 * 24 * 7
 const RTExpire = "7d"
 
@@ -208,6 +208,7 @@ export const emailData = (req, res) => {
 		} else if (data === null) {
 			res.status(500).send("data not found")
 		} else {
+			data.password = null
 			res.send(data)
 		}
 	})

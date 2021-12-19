@@ -10,14 +10,14 @@ if (process.env.NODE_ENV !== 'production') {
 import { first } from "./protected_functions/first"
 import { register, login, logout, userData, newCookies, getEmails, emailData } from "./controllers/index.js"
 import { verifyToken, refreshToken } from "./middleware/authjwt.js";
-import { MessagePost, MessageGet, AllConversationGet, SearchUser, FriendGetById, FriendPost, FriendGetByEmail, ConversationGetFriendId, Seen, Delivered } from "./controllers/whatsap";
+import { MessagePost, MessageGet, AllConversationGet, SearchUser, FriendGetById, FriendPost, FriendGetByEmail, ConversationGetFriendId, Seen, Delivered, sendFriendRequest, cancelFriendRequest, checkFriendRequest, removeFriendRequest, acceptFriendRequest, removeNotification, allNotifications, seenNotifications } from "./controllers/whatsap";
 
 const url = process.env.MONGO_URL
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
 
 const db = mongoose.connection
 db.once('open', _ => {
-	console.log('Database connected:', url)
+	console.log('Database connected:')
 })
 db.on('error', err => {
 	console.error('connection error:', err)
@@ -58,6 +58,15 @@ app.post("/friendEmail", verifyToken, FriendGetByEmail)
 app.post("/searchUsers", verifyToken, SearchUser)
 app.post("/seen", verifyToken, Seen)
 app.post("/delivered", verifyToken, Delivered)
+app.post("/sendFriendRequest", verifyToken, sendFriendRequest)
+app.post("/cancelFriendRequest", verifyToken, cancelFriendRequest)
+app.post("/checkFriendRequest", verifyToken, checkFriendRequest)
+app.get("/allNotifications", verifyToken, allNotifications)
+app.get("/seenNotifications", verifyToken, seenNotifications)
+app.post("/acceptFriendRequest", verifyToken, acceptFriendRequest)
+app.post("/removeFriendRequest", verifyToken, removeFriendRequest)
+app.post("/removeNotification", verifyToken, removeNotification)
+
 
 
 
