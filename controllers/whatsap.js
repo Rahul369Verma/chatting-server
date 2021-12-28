@@ -36,7 +36,7 @@ export const MessagePost = async (req, res) => {
 							return res.status(500).send("Message not been saved")
 						}
 						if (messageSaved) {
-							return res.status(200).send(messageSaved)
+							return res.status(200).send({ messageSaved, conversationSaved })
 						}
 					})
 				}
@@ -48,7 +48,11 @@ export const MessagePost = async (req, res) => {
 			}
 			if (messageSaved) {
 				Conversation.updateOne({ _id: messageBody.conversationId }, { $set: { newMessage: true, senderEmail: messageBody.senderEmail, lastMessage: messageBody.message } }, (updateErr, updated) => {
-					return res.send(messageSaved)
+					if (updateErr) {
+						res.status(500).send("cant update conversation")
+					} else {
+						return res.send({ messageSaved })
+					}
 				})
 			}
 		})
@@ -103,16 +107,16 @@ export const AllConversationGet = (req, res) => {
 			res.status(404).send("user not found")
 		} else {
 			userEmail = data.email
-			Friend.find({ members: { $in: [userEmail] } }, async (err, friendFound) => {
+			Friend.find({ members: { $in: [userEmail] } }, async (err, friendsFound) => {
 				if (err) {
 					res.status(500).send("error finding friend")
-				} else if (friendFound === null) {
+				} else if (friendsFound === null) {
 					res.send([])
 				} else {
 					console.log(userEmail)
-					console.log("friends Found", friendFound)
-					for (let i = 0; i < friendFound.length; i++) {
-						const conversationFound = await Conversation.findOne({ friendCollectionId: friendFound[i]._id })
+					console.log("friends Found", friendsFound)
+					for (let i = 0; i < friendsFound.length; i++) {
+						const conversationFound = await Conversation.findOne({ friendCollectionId: friendsFound[i]._id })
 						if (conversationFound === null) {
 
 						} else {
@@ -138,52 +142,77 @@ export const ConversationGetFriendId = (req, res) => {
 			console.log("not found")
 			res.send(null)
 		} else {
-			console.log("conversation found", conversationsFound)
 			res.send(conversationsFound)
 		}
 	})
 }
 
-export const SearchUser = (req, res) => {
+export const OtherUsersGet = (req, res) => {
 	console.log(req.body)
-	User.find({ $or: [{ name: { '$regex': req.body.name, "$options": 'i' } }, { email: { '$regex': req.body.name, "$options": 'i' } }] }, async (err, allUsers) => {
-		if (err) {
-			res.status(500).send("error occurred for searching in database")
-		}
-		let friends = []
-		let conversations = []
-		let others = []
-		let s = false
-		for (let i = 0; i < allUsers.length; i++) {
-			if (allUsers[i]._id != req.jwtData._id) {
-				await Friend.findOne({ members: { $all: [allUsers[i].email, req.body.email] } }, async (err, friendFound) => {
-					if (err) {
-						return
-					} else if (friendFound === null) {
-						allUsers[i].password = null
-						await others.push(allUsers[i])
-						return
-					} else {
-						await friends.push(friendFound)
-						return
+	try {
+		User.find({}, async (err, allUsers) => {
+			if (err) {
+				res.status(500).send("error occurred for searching in database")
+			} else {
+				for (let j = 0; j < allUsers.length; j++) {
+					var searchUsers = allUsers.filter(o => (o.name.includes(req.body.name) || o.email.includes(req.body.name)));
+				}
+				console.log("all", allUsers)
+				console.log("search", searchUsers)
+				let others = []
+				for (let i = 0; i < searchUsers.length; i++) {
+					if (searchUsers[i]._id != String(req.jwtData._id)) {
+						await Friend.findOne({ members: { $all: [searchUsers[i].email, req.body.email] } }, async (err, friendFound) => {
+							if (err) {
+								console.log(err)
+								res.status(500).send("database error")
+							} else if (friendFound === null) {
+								searchUsers[i].password = null
+								await others.push(searchUsers[i])
+							} else {
+							}
+						})
 					}
-				})
+				}
+				console.log(others)
+				res.send(others)
 			}
+		})
+	} catch (error) {
+		console.log("error in getting user", error)
+		res.status(500).send("error occurred for searching in database")
+	}
+}
+export const deleteMessages = (req, res) => {
+	Message.deleteMany({ conversationId: req.body.id }, (err, done) => {
+		if (err) {
+			res.status(500).send("error")
+		} else {
+			res.send(done)
 		}
-		for (let i = 0; i < friends.length; i++) {
-			await Conversation.findOne({ friendCollectionId: friends[i]._id }, async (err, conversationFound) => {
+	})
+}
+
+export const AllFriendsGet = (req, res) => {
+	console.log("jwtData", req.jwtData)
+	let userEmail = ""
+	User.findOne({ _id: req.jwtData._id }, (err, data) => {
+		if (err) {
+			res.status(404).send("user not found")
+		} else if (data === null) {
+			res.status(404).send("user not found")
+		} else {
+			userEmail = data.email
+			Friend.find({ members: { $in: [userEmail] } }, async (err, friendsFound) => {
 				if (err) {
-					console.log(err)
-				} else if (conversationFound === null) {
-					return
+					res.status(500).send("error finding friends")
+				} else if (friendsFound === null) {
+					res.send([])
 				} else {
-					await conversations.push(conversationFound)
-					return
+					res.status(200).send(friendsFound)
 				}
 			})
 		}
-		console.log(others, friends, conversations)
-		res.send({ others, friends, conversations })
 	})
 }
 
@@ -231,22 +260,47 @@ export const FriendGetByEmail = (req, res) => {
 		}
 	})
 }
-export const Seen = (req, res) => {
-	Conversation.updateOne({ _id: req.body.id }, { $set: { newMessage: false } }, (err, friendFound) => {
+
+export const allSeen = (req, res) => {
+	Conversation.updateOne({ _id: req.body.conversationId }, { $set: { newMessage: false } }, (err, conversationFound) => {
 		if (err) {
 			res.status(500).send("error finding friend")
-		} else if (friendFound === null) {
-			res.status(404).send("Friend Not Found")
+		} else if (conversationFound === null) {
+			res.status(404).send("Conversation Not Found")
 		} else {
-			Message.updateMany({ conversationId: req.body.id }, { $set: { status: "seen" } }, (messageUpdateErr, messageUpdated) => {
-				res.send("Message Seen status success")
-			})
+			res.status(200).send("false successfully")
 		}
 	})
 }
-export const Delivered = (req, res) => {
+
+export const Seen = (req, res) => {
+	Message.findByIdAndUpdate(req.body.id, { $set: { status: "seen" } }, (messageUpdateErr, messageUpdated) => {
+		if (messageUpdateErr) {
+			res.status(500).send("cant update seen")
+		} else {
+			console.log(messageUpdated)
+			res.send("Message Seen status success")
+		}
+	})
+}
+export const deliveredById = (req, res) => {
+	Message.findByIdAndUpdate(req.body.id, { $set: { status: "delivered" } }, (messageUpdateErr, messageUpdated) => {
+		if (messageUpdateErr) {
+			res.status(500).send("cant update seen")
+		} else {
+			res.send("Message Delivered status success")
+		}
+	})
+}
+
+export const deliveredByConversationId = (req, res) => {
 	Message.updateMany({ conversationId: req.body.id, status: "send" }, { $set: { status: "delivered" } }, (messageUpdateErr, messageUpdated) => {
-		res.send("Message Seen status success")
+		if (messageUpdateErr) {
+			res.status(500).send("cant update seen")
+		} else {
+			console.log(messageUpdated)
+			res.send(messageUpdated)
+		}
 	})
 }
 
