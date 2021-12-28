@@ -40,7 +40,7 @@ export const MessagePost = async (req, res) => {
 								if (updateErr) {
 									res.status(500).send("cant update conversation")
 								} else {
-									return res.status(200).send({ messageSaved, conversationSaved })
+									return res.status(200).send({ messageSaved: messageSaved, conversationSaved })
 								}
 							})
 						}
@@ -57,7 +57,7 @@ export const MessagePost = async (req, res) => {
 					if (updateErr) {
 						res.status(500).send("cant update conversation")
 					} else {
-						return res.status(200).send({ messageSaved })
+						return res.status(200).send({ messageSaved: messageSaved })
 					}
 				})
 			}
@@ -103,7 +103,6 @@ export const MessageGet = (req, res) => {
 
 
 export const AllConversationGet = (req, res) => {
-	console.log("jwtData", req.jwtData)
 	let userEmail = ""
 	let conversations = []
 	User.findOne({ _id: req.jwtData._id }, (err, data) => {
@@ -119,7 +118,6 @@ export const AllConversationGet = (req, res) => {
 				} else if (friendsFound === null) {
 					res.send([])
 				} else {
-					console.log(userEmail)
 					console.log("friends Found", friendsFound)
 					for (let i = 0; i < friendsFound.length; i++) {
 						const conversationFound = await Conversation.findOne({ friendCollectionId: friendsFound[i]._id })
@@ -130,7 +128,6 @@ export const AllConversationGet = (req, res) => {
 						}
 					}
 					if (conversations !== []) {
-						console.log(conversations)
 						res.status(200).send(conversations)
 					}
 				}
