@@ -17,6 +17,10 @@ const conversationSchema = new Schema({
   lastMessage: {
     type: String,
     required: true
+  },
+  lastMessageId: {
+    type: String,
+    default: null
   }
 }, { timestamps: true })
 

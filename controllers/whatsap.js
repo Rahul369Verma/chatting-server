@@ -36,7 +36,13 @@ export const MessagePost = async (req, res) => {
 							return res.status(500).send("Message not been saved")
 						}
 						if (messageSaved) {
-							return res.status(200).send({ messageSaved, conversationSaved })
+							Conversation.updateOne({ _id: messageBody.conversationId }, { $set: { lastMessageId: messageSaved._id } }, (updateErr, updated) => {
+								if (updateErr) {
+									res.status(500).send("cant update conversation")
+								} else {
+									return res.status(200).send({ messageSaved, conversationSaved })
+								}
+							})
 						}
 					})
 				}
@@ -47,11 +53,11 @@ export const MessagePost = async (req, res) => {
 				return res.status(500).send("Message not been saved")
 			}
 			if (messageSaved) {
-				Conversation.updateOne({ _id: messageBody.conversationId }, { $set: { newMessage: true, senderEmail: messageBody.senderEmail, lastMessage: messageBody.message } }, (updateErr, updated) => {
+				Conversation.updateOne({ _id: messageBody.conversationId }, { $set: { newMessage: true, senderEmail: messageBody.senderEmail, lastMessage: messageBody.message, lastMessageId: messageSaved._id } }, (updateErr, updated) => {
 					if (updateErr) {
 						res.status(500).send("cant update conversation")
 					} else {
-						return res.send({ messageSaved })
+						return res.status(200).send({ messageSaved })
 					}
 				})
 			}
@@ -262,7 +268,7 @@ export const FriendGetByEmail = (req, res) => {
 }
 
 export const allSeen = (req, res) => {
-	Conversation.updateOne({ _id: req.body.conversationId }, { $set: { newMessage: false } }, (err, conversationFound) => {
+	Conversation.updateOne({ _id: req.body.id }, { $set: { newMessage: false } }, (err, conversationFound) => {
 		if (err) {
 			res.status(500).send("error finding friend")
 		} else if (conversationFound === null) {
@@ -274,17 +280,18 @@ export const allSeen = (req, res) => {
 }
 
 export const Seen = (req, res) => {
-	Message.findByIdAndUpdate(req.body.id, { $set: { status: "seen" } }, (messageUpdateErr, messageUpdated) => {
+	console.log("body",req.body)
+	Message.updateOne({_id: req.body.id}, { $set: { status: "seen" } }, (messageUpdateErr, messageUpdated) => {
 		if (messageUpdateErr) {
 			res.status(500).send("cant update seen")
 		} else {
-			console.log(messageUpdated)
+			console.log("seen", messageUpdated)
 			res.send("Message Seen status success")
 		}
 	})
 }
 export const deliveredById = (req, res) => {
-	Message.findByIdAndUpdate(req.body.id, { $set: { status: "delivered" } }, (messageUpdateErr, messageUpdated) => {
+	Message.updateOne({_id: req.body.id}, { $set: { status: "delivered" } }, (messageUpdateErr, messageUpdated) => {
 		if (messageUpdateErr) {
 			res.status(500).send("cant update seen")
 		} else {
