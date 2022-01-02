@@ -72,7 +72,7 @@ export const MessagePost = async (req, res) => {
 					if (updateErr) {
 						res.status(500).send("cant update conversation")
 					} else {
-						return res.status(200).send({ messageSaved: messageSaved })
+						return res.status(200).send({ messageSaved: messageSaved, conversationSaved: updated })
 					}
 				})
 			}
@@ -309,8 +309,9 @@ export const deleteMessages = (req, res) => {
 // 	})
 // }
 
-export const IsFriend = (req, res) => {
+export const IsFriend = async (req, res) => {
 	console.log(req.query.email)
+	let user = await User.findById(req.jwtData._id)
 	Friend.findOne({
 		userId: req.jwtData._id,
 		"allFriends.email": req.query.email
@@ -321,7 +322,7 @@ export const IsFriend = (req, res) => {
 			console.log("findFriend null", findFriend)
 			res.status(200).send({ isFriend: false, conversation: false })
 		} else {
-			Conversation.findOne({ "members.email": { $all: ["rahul@gmail.com", "rohit@gmail.com"] } },
+			Conversation.findOne({ "members.email": { $all: [req.query.email, user.email] } },
 				(errConversation, conversation) => {
 					if (errConversation) {
 						res.status(500).send("cant find conversation")
@@ -519,22 +520,22 @@ export const cancelFriendRequest = async (req, res) => {
 	}
 
 }
-export const checkFriendRequest = async (req, res) => {
-	Notification.findOne({ senderEmail: req.body.firstEmail, receiverEmail: req.body.secondEmail, type: req.body.type }, (error, find) => {
+export const checkNotification = async (req, res) => {
+	Notification.findOne({ senderEmail: req.body.firstEmail, receiverEmail: req.body.secondEmail, type: req.body.type }, (error, findOne) => {
 		if (error) {
 			res.status(500).send("cant check")
-		} else if (find === null) {
-			Notification.findOne({ senderEmail: req.body.secondEmail, receiverEmail: req.body.firstEmail, type: req.body.type }, (error, find) => {
+		} else if (findOne === null) {
+			Notification.findOne({ senderEmail: req.body.secondEmail, receiverEmail: req.body.firstEmail, type: req.body.type }, (error, findTwo) => {
 				if (error) {
 					res.status(500).send("cant check")
-				} else if (find === null) {
+				} else if (findTwo === null) {
 					res.status(200).send(false)
 				} else {
-					res.status(200).send({ senderEmail: req.body.secondEmail, receiverEmail: req.body.firstEmail })
+					res.status(200).send(findTwo)
 				}
 			})
 		} else {
-			res.status(200).send({ senderEmail: req.body.firstEmail, receiverEmail: req.body.secondEmail })
+			res.status(200).send(findOne)
 		}
 	})
 }
@@ -576,6 +577,7 @@ export const seenNotifications = async (req, res) => {
 }
 
 export const acceptFriendRequest = async (req, res) => {
+	console.log(req.body)
 	let notificationBody = {
 		senderEmail: req.body.data.receiverEmail,
 		receiverEmail: req.body.data.senderEmail,

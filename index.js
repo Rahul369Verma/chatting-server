@@ -13,10 +13,10 @@ import { verifyToken, refreshToken } from "./middleware/authjwt.js";
 import {
 	MessagePost, MessageGet, AllConversationGet,
 	FriendPost, ConversationGetFriendId, Seen, sendFriendRequest,
-	cancelFriendRequest, checkFriendRequest, removeFriendRequest, acceptFriendRequest,
+	cancelFriendRequest, removeFriendRequest, acceptFriendRequest,
 	removeNotification, allNotifications, seenNotifications, AllFriendsGet, OtherUsersGet,
 	deleteMessages, allSeen, SearchFriends,
-	deliveredById, deliveredByConversationId, searchConversations, IsFriend, allFriendRequests
+	deliveredById, deliveredByConversationId, searchConversations, IsFriend, allFriendRequests, checkNotification
 } from "./controllers/whatsap";
 
 const url = process.env.MONGO_URL
@@ -74,7 +74,7 @@ app.post("/search/conversations", verifyToken, searchConversations)
 app.post("/search/friends", verifyToken, SearchFriends)
 app.post("/sendFriendRequest", verifyToken, sendFriendRequest)
 app.post("/cancelFriendRequest", verifyToken, cancelFriendRequest)
-app.post("/checkFriendRequest", verifyToken, checkFriendRequest)
+app.post("/checkFriendRequest", verifyToken, checkNotification)
 app.get("/allNotification", verifyToken, allNotifications)
 app.get("/allRequests", verifyToken, allFriendRequests)
 app.get("/seenNotifications", verifyToken, seenNotifications)
