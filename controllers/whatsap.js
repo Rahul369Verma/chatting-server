@@ -24,7 +24,16 @@ export const MessagePost = async (req, res) => {
 		status: "send"
 	}
 	if (!req.body.conversationId) {
-		await new Conversation({ friendCollectionId: req.body.friendId, newMessage: true, senderEmail: messageBody.senderEmail, lastMessage: messageBody.message })
+		let newConversation = {
+			members: [
+				{ name: req.body.friendName, email: req.body.friendEmail },
+				{ name: req.body.myName, email: req.body.myEmail }
+			],
+			newMessage: true,
+			senderEmail: messageBody.senderEmail,
+			lastMessage: messageBody.message
+		}
+		await new Conversation(newConversation)
 			.save(async (conversationSaveErr, conversationSaved) => {
 				if (conversationSaveErr) {
 					return res.status(500).send("conversation error Message not been saved")
@@ -36,13 +45,14 @@ export const MessagePost = async (req, res) => {
 							return res.status(500).send("Message not been saved")
 						}
 						if (messageSaved) {
-							Conversation.updateOne({ _id: messageBody.conversationId }, { $set: { lastMessageId: messageSaved._id } }, (updateErr, updated) => {
-								if (updateErr) {
-									res.status(500).send("cant update conversation")
-								} else {
-									return res.status(200).send({ messageSaved: messageSaved, conversationSaved })
-								}
-							})
+							// Conversation.updateOne({ _id: messageBody.conversationId }, { $set: { lastMessageId: messageSaved._id } }, (updateErr, updated) => {
+							// 	if (updateErr) {
+							// 		res.status(500).send("cant update conversation")
+							// 	} else {
+							// 		return res.status(200).send({ messageSaved: messageSaved, conversationSaved })
+							// 	}
+							// })
+							return res.status(200).send({ messageSaved: messageSaved, conversationSaved })
 						}
 					})
 				}
@@ -53,7 +63,12 @@ export const MessagePost = async (req, res) => {
 				return res.status(500).send("Message not been saved")
 			}
 			if (messageSaved) {
-				Conversation.updateOne({ _id: messageBody.conversationId }, { $set: { newMessage: true, senderEmail: messageBody.senderEmail, lastMessage: messageBody.message, lastMessageId: messageSaved._id } }, (updateErr, updated) => {
+				let newConversation = {
+					newMessage: true,
+					senderEmail: messageBody.senderEmail,
+					lastMessage: messageBody.message,
+				}
+				Conversation.updateOne({ _id: messageBody.conversationId }, { $set: newConversation }, (updateErr, updated) => {
 					if (updateErr) {
 						res.status(500).send("cant update conversation")
 					} else {
@@ -103,33 +118,66 @@ export const MessageGet = (req, res) => {
 
 
 export const AllConversationGet = (req, res) => {
-	let userEmail = ""
-	let conversations = []
 	User.findOne({ _id: req.jwtData._id }, (err, data) => {
 		if (err) {
 			res.status(404).send("user not found")
 		} else if (data === null) {
 			res.status(404).send("user not found")
 		} else {
-			userEmail = data.email
-			Friend.find({ members: { $in: [userEmail] } }, async (err, friendsFound) => {
+			Conversation.find({ "members.email": { $in: [data.email] } }, async (err, conversationsFound) => {
 				if (err) {
 					res.status(500).send("error finding friend")
-				} else if (friendsFound === null) {
+				} else if (conversationsFound === null) {
+					console.log("null")
 					res.send([])
 				} else {
-					console.log("friends Found", friendsFound)
-					for (let i = 0; i < friendsFound.length; i++) {
-						const conversationFound = await Conversation.findOne({ friendCollectionId: friendsFound[i]._id })
-						if (conversationFound === null) {
+					console.log(conversationsFound)
+					res.status(200).send(conversationsFound)
+				}
+			})
+		}
+	})
+}
 
-						} else {
-							conversations.push(conversationFound)
-						}
-					}
-					if (conversations !== []) {
-						res.status(200).send(conversations)
-					}
+export const searchConversations = (req, res) => {
+	User.findOne({ _id: req.jwtData._id }, (err, data) => {
+		if (err) {
+			res.status(404).send("user not found")
+		} else if (data === null) {
+			res.status(404).send("user not found")
+		} else {
+			let pipeline = [{
+				$unwind: {
+					path: "$members",
+				}
+			},
+			{
+				$match: {
+					"members.email": { $not: { $eq: data.email } }
+				}
+			},
+			{
+				$match: {
+					"members.name": { $regex: req.query.search, $options: "i" }
+				}
+			},
+			{
+				$group: {
+					_id: "$_id",
+					newMessage: { $first: "$newMessage" },
+					senderEmail: { $first: "$senderEmail" },
+					members: { $first: "$members" }
+				}
+			}
+			]
+			Conversation.aggregate(pipeline, (err, conversationsFound) => {
+				if (err) {
+					res.status(500).send("error finding conversation")
+				} else if (conversationsFound === null) {
+					console.log("not found")
+					res.status(200).send([])
+				} else {
+					res.status(200).send(conversationsFound)
 				}
 			})
 		}
@@ -150,35 +198,83 @@ export const ConversationGetFriendId = (req, res) => {
 	})
 }
 
+export const SearchFriends = () => {
+	let pipeline = [
+		{
+			$match: {
+				userId: req.jwtData._id
+			}
+		},
+		{
+			$unwind: {
+				path: "$allFriends",
+			}
+		},
+		{
+			$match: {
+				"allFriends.name": { $regex: req.query.search, $options: "i" }
+			}
+		}
+	]
+	Friend.aggregate(pipeline, (errFindingFriends, friends) => {
+		if (errFindingFriends) {
+			res.status(500).send("error occurred for searching in database")
+		} else {
+			res.status(200).send({ searchUsers, friends })
+		}
+	});
+}
+
 export const OtherUsersGet = (req, res) => {
 	console.log(req.body)
 	try {
-		User.find({}, async (err, allUsers) => {
+		User.find({
+			$or: [{ name: { '$regex': req.body.name, "$options": 'i' } },
+			{ email: { '$regex': req.body.name, "$options": 'i' } }]
+		}, { password: 0 }, async (err, allUsers) => {
 			if (err) {
 				res.status(500).send("error occurred for searching in database")
 			} else {
-				for (let j = 0; j < allUsers.length; j++) {
-					var searchUsers = allUsers.filter(o => (o.name.includes(req.body.name) || o.email.includes(req.body.name)));
-				}
-				console.log("all", allUsers)
-				console.log("search", searchUsers)
-				let others = []
-				for (let i = 0; i < searchUsers.length; i++) {
-					if (searchUsers[i]._id != String(req.jwtData._id)) {
-						await Friend.findOne({ members: { $all: [searchUsers[i].email, req.body.email] } }, async (err, friendFound) => {
-							if (err) {
-								console.log(err)
-								res.status(500).send("database error")
-							} else if (friendFound === null) {
-								searchUsers[i].password = null
-								await others.push(searchUsers[i])
-							} else {
-							}
-						})
+				let pipeline = [
+					{
+						$match: {
+							userId: req.jwtData._id
+						}
+					},
+					{
+						$unwind: {
+							path: "$allFriends",
+						}
+					},
+					{
+						$match: {
+							"allFriends.name": { $regex: req.body.name, $options: "i" }
+						}
 					}
-				}
-				console.log(others)
-				res.send(others)
+				]
+				Friend.aggregate(pipeline, (errFindingFriends, friends) => {
+					if (errFindingFriends) {
+						res.status(500).send("error occurred for searching in database")
+					} else {
+						console.log(allUsers, friends)
+						res.status(200).send({ allUsers, friends })
+					}
+				});
+				// let others = []
+				// for (let i = 0; i < searchUsers.length; i++) {
+				// 	if (searchUsers[i]._id != String(req.jwtData._id)) {
+				// 		await Friend.findOne({ members: { $all: [searchUsers[i].email, req.body.email] } }, async (err, friendFound) => {
+				// 			if (err) {
+				// 				console.log(err)
+				// 				res.status(500).send("database error")
+				// 			} else if (friendFound === null) {
+				// 				searchUsers[i].password = null
+				// 				others.push(searchUsers[i])
+				// 			} else {
+				// 			}
+				// 		})
+				// 	}
+				// }
 			}
 		})
 	} catch (error) {
@@ -196,73 +292,154 @@ export const deleteMessages = (req, res) => {
 	})
 }
 
+// export const IsFriend = (req, res) => {
+// 	Friend.findOne({
+// 		userId: req.jwtData._id,
+// 		"allFriends.email": req.query.email
+// 	}, (error, findFriend) => {
+// 		if (error) {
+// 			res.status(500).send("error finding friends")
+// 		} else if (findFriend === null) {
+// 			console.log("findFriend null", findFriend)
+// 			res.status(200).send(false)
+// 		} else {
+// 			console.log("findFriend", findFriend)
+// 			res.status(200).send(true)
+// 		}
+// 	})
+// }
+
+export const IsFriend = (req, res) => {
+	console.log(req.query.email)
+	Friend.findOne({
+		userId: req.jwtData._id,
+		"allFriends.email": req.query.email
+	}, (error, findFriend) => {
+		if (error) {
+			res.status(500).send("error finding friends")
+		} else if (findFriend === null) {
+			console.log("findFriend null", findFriend)
+			res.status(200).send({ isFriend: false, conversation: false })
+		} else {
+			Conversation.findOne({ "members.email": { $all: ["rahul@gmail.com", "rohit@gmail.com"] } },
+				(errConversation, conversation) => {
+					if (errConversation) {
+						res.status(500).send("cant find conversation")
+					} else if (conversation === null) {
+						console.log("no conversation found")
+						res.status(200).send({ isFriend: true, conversation: false })
+					} else {
+						console.log("findFriend", findFriend)
+						res.status(200).send({ isFriend: true, conversation: conversation })
+					}
+				})
+		}
+	})
+}
+
 export const AllFriendsGet = (req, res) => {
 	console.log("jwtData", req.jwtData)
-	let userEmail = ""
-	User.findOne({ _id: req.jwtData._id }, (err, data) => {
-		if (err) {
-			res.status(404).send("user not found")
-		} else if (data === null) {
-			res.status(404).send("user not found")
+	Friend.findOne({ userId: req.jwtData._id }, (error, findFriend) => {
+		console.log(findFriend)
+		if (error) {
+			res.status(500).send("error finding friends")
+		} else if (findFriend === null) {
+			res.status(200).send([])
 		} else {
-			userEmail = data.email
-			Friend.find({ members: { $in: [userEmail] } }, async (err, friendsFound) => {
+			res.status(200).send(findFriend.allFriends)
+		}
+	})
+	// User.findOne({ _id: req.jwtData._id }, (err, data) => {
+	// 	if (err) {
+	// 		res.status(404).send("user not found")
+	// 	} else if (data === null) {
+	// 		res.status(404).send("user not found")
+	// 	} else {
+	// 		userEmail = data.email
+	// 		Friend.find({ members: { $in: [userEmail] } }, async (err, friendsFound) => {
+	// 			if (err) {
+	// 				res.status(500).send("error finding friends")
+	// 			} else if (friendsFound === null) {
+	// 				res.send([])
+	// 			} else {
+	// 				res.status(200).send(friendsFound)
+	// 			}
+	// 		})
+	// 	}
+	// })
+}
+
+export const FriendPost = (req, res) => {
+	Friend.updateOne({ userId: req.body.jwtData._id }, {
+		$push: {
+			"allFriends": {
+				userId: req.body.senderId,
+				email: req.body.senderEmail
+			}
+		}
+	}, (error, ourFriendSaved) => {
+		if (error) {
+			res.status(500).send("cant Saved our Friend")
+		} else {
+			Friend.updateOne({ userId: req.body.senderId }, {
+				$push: {
+					"allFriends": {
+						userId: req.body.jwtData._id,
+						email: req.body.myEmail
+					}
+				}
+			}, (err, senderFriendSaved) => {
 				if (err) {
-					res.status(500).send("error finding friends")
-				} else if (friendsFound === null) {
-					res.send([])
+					res.status(500).send("cant Saved sender Friend")
 				} else {
-					res.status(200).send(friendsFound)
+					res.status(200).send("saved Successfully")
 				}
 			})
 		}
 	})
-}
-
-export const FriendPost = (req, res) => {
-	Friend.findOne({ members: { $all: [req.body.senderEmail, req.body.receiverEmail] } }, (err, friendFound) => {
-		if (err) {
-			res.status(500).send("error finding friend")
-		} else if (friendFound === null) {
-			new Friend({ members: [req.body.senderEmail, req.body.receiverEmail] })
-				.save((friendSaveErr, friendSaved) => {
-					if (friendSaveErr) {
-						return res.status(500).send("friend not been saved")
-					}
-					if (friendSaved) {
-						res.send(friendSaved)
-					}
-				})
-		} else if (friendFound) {
-			res.send(null)
-		}
-	})
+	// Friend.findOne({ members: { $all: [req.body.senderEmail, req.body.receiverEmail] } }, (err, friendFound) => {
+	// 	if (err) {
+	// 		res.status(500).send("error finding friend")
+	// 	} else if (friendFound === null) {
+	// 		new Friend({ members: [req.body.senderEmail, req.body.receiverEmail] })
+	// 			.save((friendSaveErr, friendSaved) => {
+	// 				if (friendSaveErr) {
+	// 					return res.status(500).send("friend not been saved")
+	// 				}
+	// 				if (friendSaved) {
+	// 					res.send(friendSaved)
+	// 				}
+	// 			})
+	// 	} else if (friendFound) {
+	// 		res.send(null)
+	// 	}
+	// })
 
 }
 
-export const FriendGetById = (req, res) => {
-	Friend.findOne({ _id: req.body.friendCollectionId }, (err, friendFound) => {
-		if (err) {
-			res.status(500).send("error finding friend")
-		} else if (friendFound === null) {
-			res.status(404).send("Friend Not Found")
-		} else {
-			res.send(friendFound)
-		}
-	})
-}
+// export const FriendGetById = (req, res) => {
+// 	Friend.findOne({ _id: req.body.friendCollectionId }, (err, friendFound) => {
+// 		if (err) {
+// 			res.status(500).send("error finding friend")
+// 		} else if (friendFound === null) {
+// 			res.status(404).send("Friend Not Found")
+// 		} else {
+// 			res.send(friendFound)
+// 		}
+// 	})
+// }
 
-export const FriendGetByEmail = (req, res) => {
-	Friend.findOne({ members: { $all: [req.body.senderEmail, req.body.receiverEmail] } }, (err, friendFound) => {
-		if (err) {
-			res.status(500).send("error finding friend")
-		} else if (friendFound === null) {
-			res.status(404).send("Friend Not Found")
-		} else {
-			res.send(friendFound)
-		}
-	})
-}
+// export const FriendGetByEmail = (req, res) => {
+// 	Friend.findOne({ members: { $all: [req.body.senderEmail, req.body.receiverEmail] } }, (err, friendFound) => {
+// 		if (err) {
+// 			res.status(500).send("error finding friend")
+// 		} else if (friendFound === null) {
+// 			res.status(404).send("Friend Not Found")
+// 		} else {
+// 			res.send(friendFound)
+// 		}
+// 	})
+// }
 
 export const allSeen = (req, res) => {
 	Conversation.updateOne({ _id: req.body.id }, { $set: { newMessage: false } }, (err, conversationFound) => {
@@ -277,8 +454,8 @@ export const allSeen = (req, res) => {
 }
 
 export const Seen = (req, res) => {
-	console.log("body",req.body)
-	Message.updateOne({_id: req.body.id}, { $set: { status: "seen" } }, (messageUpdateErr, messageUpdated) => {
+	console.log("body", req.body)
+	Message.updateOne({ _id: req.body.id }, { $set: { status: "seen" } }, (messageUpdateErr, messageUpdated) => {
 		if (messageUpdateErr) {
 			res.status(500).send("cant update seen")
 		} else {
@@ -288,7 +465,7 @@ export const Seen = (req, res) => {
 	})
 }
 export const deliveredById = (req, res) => {
-	Message.updateOne({_id: req.body.id}, { $set: { status: "delivered" } }, (messageUpdateErr, messageUpdated) => {
+	Message.updateOne({ _id: req.body.id }, { $set: { status: "delivered" } }, (messageUpdateErr, messageUpdated) => {
 		if (messageUpdateErr) {
 			res.status(500).send("cant update seen")
 		} else {
@@ -343,14 +520,21 @@ export const cancelFriendRequest = async (req, res) => {
 
 }
 export const checkFriendRequest = async (req, res) => {
-	console.log(req.body)
-	Notification.findOne({ senderEmail: req.body.senderEmail, receiverEmail: req.body.receiverEmail, type: req.body.type }, (error, find) => {
+	Notification.findOne({ senderEmail: req.body.firstEmail, receiverEmail: req.body.secondEmail, type: req.body.type }, (error, find) => {
 		if (error) {
-			res.status(500).send("cant cancel")
+			res.status(500).send("cant check")
 		} else if (find === null) {
-			res.status(200).send(false)
+			Notification.findOne({ senderEmail: req.body.secondEmail, receiverEmail: req.body.firstEmail, type: req.body.type }, (error, find) => {
+				if (error) {
+					res.status(500).send("cant check")
+				} else if (find === null) {
+					res.status(200).send(false)
+				} else {
+					res.status(200).send({ senderEmail: req.body.secondEmail, receiverEmail: req.body.firstEmail })
+				}
+			})
 		} else {
-			res.status(200).send(true)
+			res.status(200).send({ senderEmail: req.body.firstEmail, receiverEmail: req.body.secondEmail })
 		}
 	})
 }
@@ -365,6 +549,20 @@ export const allNotifications = async (req, res) => {
 		}
 	})
 }
+
+export const allFriendRequests = async (req, res) => {
+	console.log(req.jwtData)
+	const user = await User.findById(req.jwtData._id)
+	Notification.find({ receiverEmail: user.email, type: "friendRequest" }, (error, all) => {
+		if (error) {
+			res.status(500).send("cant get")
+		} else {
+			console.log(all)
+			res.status(200).send(all)
+		}
+	})
+}
+
 export const seenNotifications = async (req, res) => {
 	console.log(req.jwtData)
 	const user = await User.findById(req.jwtData._id)
@@ -385,18 +583,42 @@ export const acceptFriendRequest = async (req, res) => {
 		type: "acceptFriendRequest"
 	}
 	try {
+		const senderUser = await User.findOne({ email: notificationBody.senderEmail })
+		const receiverUser = await User.findOne({ email: notificationBody.receiverEmail })
 		const deleted = await Notification.deleteOne({ _id: req.body.data._id })
 		if (deleted.deletedCount !== 0) {
-			new Friend({ members: [req.body.data.senderEmail, req.body.data.receiverEmail] })
-				.save(async (friendSaveErr, friendSaved) => {
-					if (friendSaveErr) {
-						return res.status(500).send("friend not been saved")
-					}
-					if (friendSaved) {
-						await new Notification(notificationBody).save()
-						res.status(200).send(friendSaved)
+			const senderFriend = await Friend.findOne({ userId: senderUser._id })
+			if (senderFriend === null) {
+				await new Friend({
+					userId: senderUser._id,
+					allFriends: [{ name: receiverUser.name, email: receiverUser.email }]
+				}).save()
+			} else {
+				await Friend.updateOne({ userId: senderUser._id }, {
+					$push: {
+						"allFriends": {
+							name: receiverUser.name, email: receiverUser.email
+						}
 					}
 				})
+			}
+			const receiverFriend = await Friend.findOne({ userId: receiverUser._id })
+			if (receiverFriend === null) {
+				await new Friend({
+					userId: receiverUser._id,
+					allFriends: [{ name: senderUser.name, email: senderUser.email }]
+				}).save()
+			} else {
+				await Friend.updateOne({ userId: receiverUser._id }, {
+					$push: {
+						"allFriends": {
+							name: senderUser.name, email: senderUser.email
+						}
+					}
+				})
+			}
+			await new Notification(notificationBody).save()
+			res.status(200).send("you both are now friends")
 		} else {
 			res.status(500).send("Notification Not Found")
 		}

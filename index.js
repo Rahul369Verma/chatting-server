@@ -10,7 +10,14 @@ if (process.env.NODE_ENV !== 'production') {
 import { first } from "./protected_functions/first"
 import { register, login, logout, userData, newCookies, getEmails, emailData } from "./controllers/index.js"
 import { verifyToken, refreshToken } from "./middleware/authjwt.js";
-import { MessagePost, MessageGet, AllConversationGet, FriendGetById, FriendPost, FriendGetByEmail, ConversationGetFriendId, Seen, sendFriendRequest, cancelFriendRequest, checkFriendRequest, removeFriendRequest, acceptFriendRequest, removeNotification, allNotifications, seenNotifications, AllFriendsGet, OtherUsersGet, deleteMessages, allSeen, deliveredById, deliveredByConversationId } from "./controllers/whatsap";
+import {
+	MessagePost, MessageGet, AllConversationGet,
+	FriendPost, ConversationGetFriendId, Seen, sendFriendRequest,
+	cancelFriendRequest, checkFriendRequest, removeFriendRequest, acceptFriendRequest,
+	removeNotification, allNotifications, seenNotifications, AllFriendsGet, OtherUsersGet,
+	deleteMessages, allSeen, SearchFriends,
+	deliveredById, deliveredByConversationId, searchConversations, IsFriend, allFriendRequests
+} from "./controllers/whatsap";
 
 const url = process.env.MONGO_URL
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -38,13 +45,13 @@ app.use(cookieParser());
 
 
 
-app.get("/", (req, res) => {res.send("chatting server is running")})
+app.get("/", (req, res) => { res.send("chatting server is running") })
 app.get("/refreshToken", refreshToken, newCookies)
 app.post("/register", register)
 app.post("/login", login)
 app.get("/userData", verifyToken, userData)
 app.post("/emailData", verifyToken, emailData)
-app.get("/allEmails",verifyToken, getEmails)
+app.get("/allEmails", verifyToken, getEmails)
 app.get("/logout", logout)
 app.get("/user", verifyToken, first)
 app.post("/messagePost", verifyToken, MessagePost)
@@ -52,20 +59,24 @@ app.post("/messageGet", verifyToken, MessageGet)
 // app.post("/conversation", verifyToken, ConversationPost)
 app.get("/allConversations", verifyToken, AllConversationGet)
 app.post("/ConversationId", verifyToken, ConversationGetFriendId)
+app.get("/isFriend", verifyToken, IsFriend)
+// app.post("/friendId", verifyToken, IsFriendConversation)
 app.get("/allFriends", verifyToken, AllFriendsGet)
 app.post("/addFriend", verifyToken, FriendPost)
-app.post("/friendId", verifyToken, FriendGetById)
-app.post("/friendEmail", verifyToken, FriendGetByEmail)
+// app.post("/friendId", verifyToken, FriendGetById)
+// app.post("/friendEmail", verifyToken, FriendGetByEmail)
 app.post("/otherUsers", verifyToken, OtherUsersGet)
 app.post("/allSeen", verifyToken, allSeen)
 app.post("/seen", verifyToken, Seen)
 app.post("/deliveredById", verifyToken, deliveredById)
 app.post("/deliveredByConversationId", verifyToken, deliveredByConversationId)
-
+app.post("/search/conversations", verifyToken, searchConversations)
+app.post("/search/friends", verifyToken, SearchFriends)
 app.post("/sendFriendRequest", verifyToken, sendFriendRequest)
 app.post("/cancelFriendRequest", verifyToken, cancelFriendRequest)
 app.post("/checkFriendRequest", verifyToken, checkFriendRequest)
 app.get("/allNotification", verifyToken, allNotifications)
+app.get("/allRequests", verifyToken, allFriendRequests)
 app.get("/seenNotifications", verifyToken, seenNotifications)
 app.post("/acceptFriendRequest", verifyToken, acceptFriendRequest)
 app.post("/removeFriendRequest", verifyToken, removeFriendRequest)

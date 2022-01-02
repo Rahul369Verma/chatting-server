@@ -2,10 +2,6 @@ const mongoose = require('mongoose')
 const { Schema } = mongoose
 
 const conversationSchema = new Schema({
-  friendCollectionId: {
-    type: String,
-    required: true,
-  },
   newMessage: {
     type: Boolean,
     required: true,
@@ -18,9 +14,9 @@ const conversationSchema = new Schema({
     type: String,
     required: true
   },
-  lastMessageId: {
-    type: String,
-    default: null
+  members: {
+    type: Array,
+    default: []
   }
 }, { timestamps: true })
 

@@ -2,8 +2,13 @@ const mongoose = require('mongoose')
 const { Schema } = mongoose
 
 const friendSchema = new Schema({
-  members: {
-    type: Array
+  userId: {
+    type: String,
+    required: true
+  },
+  allFriends: {
+    type: Array,
+    default: []
   }
 },{timestamps: true})
 
