@@ -146,30 +146,52 @@ export const searchConversations = (req, res) => {
 		} else if (data === null) {
 			res.status(404).send("user not found")
 		} else {
-			let pipeline = [{
-				$unwind: {
-					path: "$members",
+			let pipeline = [
+				{
+					$match: {
+						"members": { $elemMatch: { email: data.email } }
+					},
+				},
+				{
+					$unwind: {
+						path: "$members",
+					}
+				},
+				{
+					$match: {
+						"members.email": { $not: { $eq: data.email } }
+					}
+				},
+				{
+					$match: {
+						"members.name": { $regex: req.query.search, $options: "i" }
+					}
 				}
-			},
-			{
-				$match: {
-					"members.email": { $not: { $eq: data.email } }
-				}
-			},
-			{
-				$match: {
-					"members.name": { $regex: req.query.search, $options: "i" }
-				}
-			},
-			{
-				$group: {
-					_id: "$_id",
-					newMessage: { $first: "$newMessage" },
-					senderEmail: { $first: "$senderEmail" },
-					members: { $first: "$members" }
-				}
-			}
 			]
+			// let pipeline = [{
+			// 	$unwind: {
+			// 		path: "$members",
+			// 	}
+			// },
+			// {
+			// 	$match: {
+			// 		"members.email": { $not: { $eq: data.email } }
+			// 	}
+			// },
+			// {
+			// 	$match: {
+			// 		"members.name": { $regex: req.query.search, $options: "i" }
+			// 	}
+			// },
+			// {
+			// 	$group: {
+			// 		_id: "$_id",
+			// 		newMessage: { $first: "$newMessage" },
+			// 		senderEmail: { $first: "$senderEmail" },
+			// 		members: { $first: "$members" }
+			// 	}
+			// }
+			// ]
 			Conversation.aggregate(pipeline, (err, conversationsFound) => {
 				if (err) {
 					res.status(500).send("error finding conversation")
@@ -177,6 +199,7 @@ export const searchConversations = (req, res) => {
 					console.log("not found")
 					res.status(200).send([])
 				} else {
+					console.log(conversationsFound)
 					res.status(200).send(conversationsFound)
 				}
 			})
@@ -198,7 +221,7 @@ export const ConversationGetFriendId = (req, res) => {
 	})
 }
 
-export const SearchFriends = () => {
+export const SearchFriends = (req, res) => {
 	let pipeline = [
 		{
 			$match: {
@@ -214,13 +237,23 @@ export const SearchFriends = () => {
 			$match: {
 				"allFriends.name": { $regex: req.query.search, $options: "i" }
 			}
+		},
+		{
+			$group: {
+				_id: "$_id",
+				userId: { $first: "$userId" },
+				allFriends: { $first: "$allFriends" }
+			}
 		}
 	]
 	Friend.aggregate(pipeline, (errFindingFriends, friends) => {
 		if (errFindingFriends) {
 			res.status(500).send("error occurred for searching in database")
+		} else if (friends === null) {
+			res.status(200).send([])
 		} else {
-			res.status(200).send({ searchUsers, friends })
+			console.log(friends)
+			res.status(200).send(friends.allFriends)
 		}
 	});
 }
