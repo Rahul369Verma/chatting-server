@@ -23,62 +23,86 @@ export const MessagePost = async (req, res) => {
 		message: req.body.message,
 		status: "send"
 	}
-	if (!req.body.conversationId) {
-		let newConversation = {
-			members: [
-				{ name: req.body.friendName, email: req.body.friendEmail },
-				{ name: req.body.myName, email: req.body.myEmail }
-			],
-			newMessage: true,
-			senderEmail: messageBody.senderEmail,
-			lastMessage: messageBody.message
-		}
-		await new Conversation(newConversation)
-			.save(async (conversationSaveErr, conversationSaved) => {
-				if (conversationSaveErr) {
-					return res.status(500).send("conversation error Message not been saved")
-				}
-				if (conversationSaved) {
-					messageBody.conversationId = conversationSaved._id
-					await new Message(messageBody).save((messageSaveErr, messageSaved) => {
-						if (messageSaveErr) {
-							return res.status(500).send("Message not been saved")
-						}
-						if (messageSaved) {
-							// Conversation.updateOne({ _id: messageBody.conversationId }, { $set: { lastMessageId: messageSaved._id } }, (updateErr, updated) => {
-							// 	if (updateErr) {
-							// 		res.status(500).send("cant update conversation")
-							// 	} else {
-							// 		return res.status(200).send({ messageSaved: messageSaved, conversationSaved })
-							// 	}
-							// })
-							return res.status(200).send({ messageSaved: messageSaved, conversationSaved })
-						}
-					})
-				}
-			})
-	} else {
-		await new Message(messageBody).save((messageSaveErr, messageSaved) => {
-			if (messageSaveErr) {
-				return res.status(500).send("Message not been saved")
+	let pipeline = [
+		{
+			$match: {
+				userId: req.jwtData._id
 			}
-			if (messageSaved) {
+		},
+		{
+			$unwind: {
+				path: "$allFriends"
+			}
+		},
+		{
+			$match: {
+				"allFriends.email": req.body.friendEmail
+			}
+		}
+	]
+	Friend.aggregate(pipeline, async (errFindFriend, findFriend) => {
+		if (errFindFriend) {
+			res.status(500).send("error finding friend")
+		} else if (findFriend === null) {
+			res.status(403).send("you both are not friends")
+		} else {
+			if (!req.body.conversationId) {
 				let newConversation = {
+					members: [
+						{ name: req.body.friendName, email: req.body.friendEmail },
+						{ name: req.body.myName, email: req.body.myEmail }
+					],
 					newMessage: true,
 					senderEmail: messageBody.senderEmail,
-					lastMessage: messageBody.message,
+					lastMessage: messageBody.message
 				}
-				Conversation.updateOne({ _id: messageBody.conversationId }, { $set: newConversation }, (updateErr, updated) => {
-					if (updateErr) {
-						res.status(500).send("cant update conversation")
-					} else {
-						return res.status(200).send({ messageSaved: messageSaved, conversationSaved: updated })
+				await new Conversation(newConversation)
+					.save(async (conversationSaveErr, conversationSaved) => {
+						if (conversationSaveErr) {
+							return res.status(500).send("conversation error Message not been saved")
+						}
+						if (conversationSaved) {
+							messageBody.conversationId = conversationSaved._id
+							await new Message(messageBody).save((messageSaveErr, messageSaved) => {
+								if (messageSaveErr) {
+									return res.status(500).send("Message not been saved")
+								}
+								if (messageSaved) {
+									// Conversation.updateOne({ _id: messageBody.conversationId }, { $set: { lastMessageId: messageSaved._id } }, (updateErr, updated) => {
+									// 	if (updateErr) {
+									// 		res.status(500).send("cant update conversation")
+									// 	} else {
+									// 		return res.status(200).send({ messageSaved: messageSaved, conversationSaved })
+									// 	}
+									// })
+									return res.status(200).send({ messageSaved: messageSaved, conversationSaved })
+								}
+							})
+						}
+					})
+			} else {
+				await new Message(messageBody).save((messageSaveErr, messageSaved) => {
+					if (messageSaveErr) {
+						return res.status(500).send("Message not been saved")
+					}
+					if (messageSaved) {
+						let newConversation = {
+							newMessage: true,
+							senderEmail: messageBody.senderEmail,
+							lastMessage: messageBody.message,
+						}
+						Conversation.updateOne({ _id: messageBody.conversationId }, { $set: newConversation }, (updateErr, updated) => {
+							if (updateErr) {
+								res.status(500).send("cant update conversation")
+							} else {
+								return res.status(200).send({ messageSaved: messageSaved, conversationSaved: updated })
+							}
+						})
 					}
 				})
 			}
-		})
-	}
-
+		}
+	})
 }
 
 export const MessageGet = (req, res) => {
@@ -168,30 +192,7 @@ export const searchConversations = (req, res) => {
 					}
 				}
 			]
-			// let pipeline = [{
-			// 	$unwind: {
-			// 		path: "$members",
-			// 	}
-			// },
-			// {
-			// 	$match: {
-			// 		"members.email": { $not: { $eq: data.email } }
-			// 	}
-			// },
-			// {
-			// 	$match: {
-			// 		"members.name": { $regex: req.query.search, $options: "i" }
-			// 	}
-			// },
-			// {
-			// 	$group: {
-			// 		_id: "$_id",
-			// 		newMessage: { $first: "$newMessage" },
-			// 		senderEmail: { $first: "$senderEmail" },
-			// 		members: { $first: "$members" }
-			// 	}
-			// }
-			// ]
+
 			Conversation.aggregate(pipeline, (err, conversationsFound) => {
 				if (err) {
 					res.status(500).send("error finding conversation")
@@ -383,54 +384,39 @@ export const AllFriendsGet = (req, res) => {
 			res.status(200).send(findFriend.allFriends)
 		}
 	})
-	// User.findOne({ _id: req.jwtData._id }, (err, data) => {
-	// 	if (err) {
-	// 		res.status(404).send("user not found")
-	// 	} else if (data === null) {
-	// 		res.status(404).send("user not found")
-	// 	} else {
-	// 		userEmail = data.email
-	// 		Friend.find({ members: { $in: [userEmail] } }, async (err, friendsFound) => {
-	// 			if (err) {
-	// 				res.status(500).send("error finding friends")
-	// 			} else if (friendsFound === null) {
-	// 				res.send([])
-	// 			} else {
-	// 				res.status(200).send(friendsFound)
-	// 			}
-	// 		})
-	// 	}
-	// })
 }
 
-export const FriendPost = (req, res) => {
-	Friend.updateOne({ userId: req.body.jwtData._id }, {
-		$push: {
-			"allFriends": {
-				userId: req.body.senderId,
-				email: req.body.senderEmail
+	export const FriendDelete = async (req, res) => {
+		let user = await User.findById(req.jwtData._id)
+		let friend = await User.findOne({email: req.query.friendEmail})
+		Friend.updateOne({ userId: user._id }, {
+			$pull: {
+				"allFriends": {
+					name: friend.name,
+					email: friend.email
+				}
 			}
-		}
-	}, (error, ourFriendSaved) => {
-		if (error) {
-			res.status(500).send("cant Saved our Friend")
-		} else {
-			Friend.updateOne({ userId: req.body.senderId }, {
-				$push: {
-					"allFriends": {
-						userId: req.body.jwtData._id,
-						email: req.body.myEmail
+		}, (error, ourFriendSaved) => {
+			if (error) {
+				res.status(500).send("cant Saved our Friend")
+			} else {
+				Friend.updateOne({ userId: friend._id }, {
+					$pull: {
+						"allFriends": {
+							name: user.name,
+							email: user.email
+						}
 					}
-				}
-			}, (err, senderFriendSaved) => {
-				if (err) {
-					res.status(500).send("cant Saved sender Friend")
-				} else {
-					res.status(200).send("saved Successfully")
-				}
-			})
-		}
-	})
+				}, (err, senderFriendSaved) => {
+					if (err) {
+						res.status(500).send("cant Saved sender Friend")
+					} else {
+						res.status(200).send("saved Successfully")
+					}
+				})
+			}
+		})
+
 	// Friend.findOne({ members: { $all: [req.body.senderEmail, req.body.receiverEmail] } }, (err, friendFound) => {
 	// 	if (err) {
 	// 		res.status(500).send("error finding friend")

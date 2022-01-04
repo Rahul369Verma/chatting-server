@@ -11,12 +11,11 @@ import { first } from "./protected_functions/first"
 import { register, login, logout, userData, newCookies, getEmails, emailData } from "./controllers/index.js"
 import { verifyToken, refreshToken } from "./middleware/authjwt.js";
 import {
-	MessagePost, MessageGet, AllConversationGet,
-	FriendPost, ConversationGetFriendId, Seen, sendFriendRequest,
+	MessagePost, MessageGet, AllConversationGet, ConversationGetFriendId, Seen, sendFriendRequest,
 	cancelFriendRequest, removeFriendRequest, acceptFriendRequest,
 	removeNotification, allNotifications, seenNotifications, AllFriendsGet, OtherUsersGet,
 	deleteMessages, allSeen, SearchFriends,
-	deliveredById, deliveredByConversationId, searchConversations, IsFriend, allFriendRequests, checkNotification
+	deliveredById, deliveredByConversationId, searchConversations, IsFriend, allFriendRequests, checkNotification, FriendDelete
 } from "./controllers/whatsap";
 
 const url = process.env.MONGO_URL
@@ -62,7 +61,7 @@ app.post("/ConversationId", verifyToken, ConversationGetFriendId)
 app.get("/isFriend", verifyToken, IsFriend)
 // app.post("/friendId", verifyToken, IsFriendConversation)
 app.get("/allFriends", verifyToken, AllFriendsGet)
-app.post("/addFriend", verifyToken, FriendPost)
+app.get("/unfriend", verifyToken, FriendDelete)
 // app.post("/friendId", verifyToken, FriendGetById)
 // app.post("/friendEmail", verifyToken, FriendGetByEmail)
 app.post("/otherUsers", verifyToken, OtherUsersGet)
