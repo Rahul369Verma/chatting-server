@@ -31,6 +31,7 @@ db.on('error', err => {
 
 var corsOptions = {
 	credentials: true,
+	optionsSuccessStatus: 200,
 	origin: [process.env.FRONTEND_APP_URL]
 }
 
